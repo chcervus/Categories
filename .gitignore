@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtuelle Umgebungen
+.venv/
+venv/
+
+# Private Entwicklungsdaten
+/Werkstatt/
+
+# Temporäre Dateien
+*~
+.DS_Store

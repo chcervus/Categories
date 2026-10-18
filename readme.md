@@ -67,21 +67,6 @@ Die Anwendung benötigt Zugriff auf den Evolution Data Server und die dort einge
 
 ## Projektstruktur
 
-```text
-Categories/
-├── categories-frontend.py
-├── kontakt_backend.py
-├── data/
-│   └── icons/
-│       └── hicolor/
-│           └── scalable/
-│               └── apps/
-│                   └── io.github.chcervus.Categories.svg
-├── README.md
-├── LICENSE
-└── .gitignore
-```
-
 - `categories-frontend.py` enthält die grafische Benutzeroberfläche und die Anwendungslogik.
 - `kontakt_backend.py` enthält die Funktionen für den Zugriff auf Kontakte und Kategorien sowie die Filterauswertung.
 - `data/icons/` enthält das Anwendungsicon für die GNOME-Integration.
@@ -109,13 +94,13 @@ Die Anwendung wurde mit Unterstützung von LLMs erstellt. Diese dienen mir als W
 Die Unterstützung umfasste insbesondere:
 
 - Erklärungen zu Python, GTK und Evolution Data Server (EDS)  
--   Unterstützung bei der Fehlersuche und beim Verständnis von Fehlermeldungen
-- Diskussion und Überprüfung von Lösungsansätzen für die Filterlogik
+- Unterstützung bei der Fehlersuche
+- Vrbesserung und Erweiterung der Filterlogik
 - Unterstützung bei der Gestaltung des Speichervorgangs, insbesondere bei Versionsprüfungen, Hintergrundthreads und der Rückmeldung an die GTK-Oberfläche
 - Überlegungen zur Fehlerbehandlung und zum Schutz personenbezogener Kontaktdaten
 
 Die Vorschläge wurden im Zusammenhang mit dem bestehenden Code geprüft und schrittweise übernommen oder angepasst. 
 
-Die Ideen, die Gestaltung und der Aufbau des Projekts liegen in meiner Verantwortung. Die Einarbeitung in alle Teiles des Programmcodes zur ständigen Verbesserung gehört ebenso zum Projekt.
+Die Ideen, die Gestaltung und der Aufbau des Projekts liegen in meiner Verantwortung.
 
 

@@ -84,12 +84,14 @@ Categories befindet sich in Entwicklung. Die Anwendung wird zunächst als Quellc
 **Fehlerberichte, Verbesserungsvorschläge und Beiträge sind willkommen.** Das Projekt befindet sich in der **Testphase**
 
 ### To do:
-- [ ] Verbesserungen an der Oberfläche: Filter-, Selektierinformationen anders anordnen 
+- [ ] Verbesserungen an der Oberfläche: Filter-, Selektierinformationen besser anordnen
+- [ ] Symbole einfügen 
 - [ ] Hovereffekt korrigieren (Rechtecke erscheinen)
 - [ ] Speicherprobleme testen
 - [ ] Language - Pack einrichten
 
 ### Bemerkung zu KI
+
 Die Anwendung wurde mit Unterstützung von LLMs erstellt. Diese dienen mir als Werkzeuge beim Programmieren. 
 Die Unterstützung umfasste insbesondere:
 

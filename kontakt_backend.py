@@ -9,46 +9,28 @@ from gi.repository import EBook, EDataServer, GLib, EBookContacts
 
 
 def lade_kontakte(adressbuch_uids=None):
-    """Lädt Kontakte aus den angegebenen EDS-Adressbüchern."""
-
-    registry = EDataServer.SourceRegistry.new_sync(None)
-
+    """Lädt Kontakte aus den angegebenen EDS-Adressbüchern parallel."""
     if adressbuch_uids is None:
         adressbuecher = lade_adressbuecher()
-        adressbuch_uids = [
-            adressbuch["uid"]
-            for adressbuch in adressbuecher
-        ]
+        adressbuch_uids = [adressbuch["uid"] for adressbuch in adressbuecher]
 
-    ergebnis = []
-
-    for uid in adressbuch_uids:
-
+    def lade_ein_adressbuch(uid):
+        """Verbindet sich mit einer Quelle und bereitet deren Kontakte auf."""
+        registry = EDataServer.SourceRegistry.new_sync(None)
         source = registry.ref_source(uid)
-
         if source is None:
-            continue
+            return []
 
         try:
-            client = EBook.BookClient.connect_sync(
-                source,
-                5,
-                None
-            )
-
-            success, contacts = client.get_contacts_sync(
-                "",
-                None
-            )
-
+            client = EBook.BookClient.connect_sync(source, 1, None)
+            success, contacts = client.get_contacts_sync("", None)
             if not success:
-                continue
-
+                return []
         except Exception:
-            continue
+            return []
 
+        ergebnis_buch = []
         for contact in contacts:
-
             kontakt = {
                 "name": "",
                 "email": [],
@@ -56,46 +38,36 @@ def lade_kontakte(adressbuch_uids=None):
                 "uid": "",
                 "adressbuch_uid": uid,
                 "eds_kontakt": contact,
-                "book_client": client
+                "book_client": client,
             }
 
             for attr in contact.get_attributes():
-
                 feld = attr.get_name().upper()
-                werte = attr.get_values_decoded()
-
-                werte = [
-                    wert.str
-                    for wert in werte
-                ]
+                werte = [wert.str for wert in attr.get_values_decoded()]
 
                 if feld == "FN":
-                    kontakt["name"] = (
-                        werte[0]
-                        if werte
-                        else ""
-                    )
-
+                    kontakt["name"] = werte[0] if werte else ""
                 elif feld == "EMAIL":
-                    kontakt["email"].extend(
-                        werte
-                    )
-
+                    kontakt["email"].extend(werte)
                 elif feld == "CATEGORIES":
-                    kontakt["kategorien"].extend(
-                        werte
-                    )
-
+                    kontakt["kategorien"].extend(werte)
                 elif feld == "UID":
-                    kontakt["uid"] = (
-                        werte[0]
-                        if werte
-                        else ""
-                    )
+                    kontakt["uid"] = werte[0] if werte else ""
 
-            ergebnis.append(kontakt)
+            ergebnis_buch.append(kontakt)
+        return ergebnis_buch
 
-    return ergebnis
+    # Die Adressbücher werden parallel geladen; executor.map erhält die
+    # ursprüngliche Reihenfolge der Adressbuch-UIDs im Gesamtergebnis.
+    from concurrent.futures import ThreadPoolExecutor
+
+    if not adressbuch_uids:
+        return []
+
+    with ThreadPoolExecutor(max_workers=min(len(adressbuch_uids), 4)) as executor:
+        teil_ergebnisse = list(executor.map(lade_ein_adressbuch, adressbuch_uids))
+
+    return [kontakt for teil in teil_ergebnisse for kontakt in teil]
 
 def lade_adressbuecher():
     """Lädt alle in EDS registrierten Adressbücher."""

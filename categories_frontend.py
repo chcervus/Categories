@@ -23,10 +23,10 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         self.set_default_size(1300, 800)
 
         self.kontakte = []
-        # PHASE 1: Generation verhindert, dass veraltete Ladejobs gewinnen.
+        # Generation verhindert, dass veraltete Ladejobs gewinnen.
         self._lade_generation = 0
         self._speichern_aktiv = False
-        # PHASE 3: Debounce fuer Texteingaben; Schutz vor Toggle-Rueckkopplung.
+        #  Debounce fuer Texteingaben; Schutz vor Toggle-Rueckkopplung.
         self._filter_timer = None
         self._auswahl_synchronisiert = False
         adressbuecher = lade_adressbuecher()
@@ -48,7 +48,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             orientation=Gtk.Orientation.HORIZONTAL
         )
 
-        paned.set_position(600)
+        paned.set_position(650)
 
         # ---------------------------------------------------------
         # LINKE SEITE: Kontakte
@@ -65,19 +65,31 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             spacing=12
         )
 
-        kopf_links.set_margin_top(12)
+        kopf_links.set_margin_top(0)
         kopf_links.set_margin_bottom(12)
         kopf_links.set_margin_start(12)
         kopf_links.set_margin_end(12)
 
+
+        # Überschrift mit Avatar und Auswahl-Checkbox
+        titel_zeile = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=8
+        )
+
+        self.kontakte_icon = Gtk.Image.new_from_icon_name(
+            "avatar-default-symbolic"
+        )
+
+        titel_zeile.append(self.kontakte_icon)
+
         titel = Gtk.Label(
             label="Kontakte"
         )
-
         titel.set_xalign(0)
-        titel.add_css_class("title-2")
+        titel.add_css_class("title-3")
 
-        kopf_links.append(titel)
+        titel_zeile.append(titel)
 
         self.auswahl_button = Gtk.CheckButton()
         self.auswahl_button.connect(
@@ -86,14 +98,28 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         )
         self.auswahl_button.set_tooltip_text("Alle auswählen")
         self.auswahl_button.set_valign(Gtk.Align.CENTER)
-        kopf_links.append(self.auswahl_button)
+
+        titel_zeile.append(self.auswahl_button)
+
+        # Überschrift und Status untereinander
+        kopf_inhalt = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=15
+        )
+
+        kopf_inhalt.append(titel_zeile)
 
         self.status_label = Gtk.Label(
             label="Kontakte werden geladen …"
         )
         self.status_label.set_xalign(0)
         self.status_label.add_css_class("dim-label")
-        kopf_links.append(self.status_label)
+
+        kopf_inhalt.append(self.status_label)
+
+        kopf_links.append(kopf_inhalt)
+
+
 
         abstand = Gtk.Box()
         abstand.set_hexpand(True)
@@ -104,6 +130,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         self.bearbeiten_button.set_icon_name(
             "document-edit-symbolic"
         )
+        self.bearbeiten_button.set_valign(Gtk.Align.START)
         self.bearbeiten_button.set_tooltip_text(
             "Kategorien bearbeiten"
         )
@@ -115,7 +142,8 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
         # E-Mail-Menü
         self.email_button = Gtk.MenuButton()
-        self.email_button.set_icon_name("mail-unread-symbolic")
+        self.email_button.set_icon_name("mail-message-new-symbolic")
+        self.email_button.set_valign(Gtk.Align.START)
         self.email_button.set_always_show_arrow(True)
         self.email_button.add_css_class("suggested-action")
         self.email_button.set_tooltip_text(
@@ -202,7 +230,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             spacing=12
         )
 
-        rechte_seite.set_margin_top(12)
+        rechte_seite.set_margin_top(0)
         rechte_seite.set_margin_bottom(12)
         rechte_seite.set_margin_start(12)
         rechte_seite.set_margin_end(12)
@@ -337,7 +365,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         )
 
         self.experten_button = Gtk.Button.new_from_icon_name(
-            "preferences-system-symbolic"
+            "preferences-other-symbolic"
         )
 
         self.experten_button.set_tooltip_text(
@@ -375,7 +403,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             "activate",
             self.filter_anwenden
         )
-        # PHASE 3: Filter nicht bei jedem Tastendruck vollstaendig neu aufbauen.
+        # Filter nicht bei jedem Tastendruck vollstaendig neu aufbauen.
         self.filter_entry.connect("changed", self.filter_geaendert)
 
 
@@ -455,15 +483,6 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
         rechte_seite.append(spacer)
 
-        # Ausgewählte Kontakte
-        self.auswahl_label = Gtk.Label(
-            label="Keine Kontakte ausgewählt"
-        )
-
-        self.auswahl_label.set_xalign(0)
-        self.auswahl_label.add_css_class("dim-label")
-
-        rechte_seite.append(self.auswahl_label)
 
         # ---------------------------------------------------------
         # Paned zusammensetzen
@@ -775,7 +794,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             anzahl_sichtbar += 1
             zeile = zeile.get_next_sibling()
 
-        # PHASE 3: Auswahlsynchronisierung ohne rekursives Signalhandling.
+
         self._auswahl_synchronisiert = True
         try:
             self.auswahl_button.set_active(
@@ -784,19 +803,10 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         finally:
             self._auswahl_synchronisiert = False
 
-        if anzahl == 0:
-            self.auswahl_label.set_text(
-                "Keine Kontakte ausgewählt"
-            )
-        elif anzahl == 1:
-            self.auswahl_label.set_text(
-                "1 Kontakt ausgewählt"
-            )
-        else:
-            self.auswahl_label.set_text(
-                f"{anzahl} Kontakte ausgewählt"
-            )
-
+        self.status_label.set_text(
+            f"{anzahl_sichtbar} gefunden - "
+            f"{anzahl} ausgewählt"
+        )
 
     def liste_tastatur(
         self,
@@ -991,9 +1001,9 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         self.auswahl_aktualisieren()
         self.email_button_aktualisieren()
         self.bearbeiten_button.set_sensitive(False)
-        self.status_label.set_text(f"{len(passende_kontakte)} Kontakte gefunden")
 
-    # PHASE 2: Kategoriebuttons erzeugen immer eindeutig gequotete Werte.
+
+    # Kategoriebuttons erzeugen immer eindeutig gequotete Werte.
     def kategorienfilter_aktualisieren(self):
         kategorien = [filter_kategorie_zitieren(k)
                       for k in sorted(self.ausgewaehlte_kategorien)]
@@ -1264,7 +1274,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         self.status_label.set_text(
             f"{len(self.kontakte)} Kontakte"
         )
-        # PHASE 1: Keine personenbezogenen Kontaktdaten ins Terminal schreiben.
+
         # Alphabetisch nach Vorname, dann Nachname sortieren
         self.kontakte.sort(
             key=lambda kontakt: kontakt.get(
@@ -1279,9 +1289,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
             self.liste.append(row)
 
-
-
-        # PHASE 1: Kontaktname und Kategorien nicht protokollieren.
+        self.auswahl_aktualisieren()
         self.kategorien_anzeigen()
         # Bestehenden Filter nach dem Neuladen erneut anwenden
         if self.filter_entry.get_text().strip():

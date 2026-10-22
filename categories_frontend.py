@@ -470,18 +470,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
 
 
-        # Trennlinie unter dem Expertenmodus
-        experten_trennlinie_unten = Gtk.Separator(
-            orientation=Gtk.Orientation.HORIZONTAL
-        )
-        rechte_seite.append(experten_trennlinie_unten)
-
-        # Spacer
-        spacer = Gtk.Box()
-
-        spacer.set_vexpand(True)
-
-        rechte_seite.append(spacer)
+    
 
 
         # ---------------------------------------------------------

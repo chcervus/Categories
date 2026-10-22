@@ -1,108 +1,108 @@
 # Categories
-![Hauptfenster](screenshots/screenshot.png)
+![Main window](screenshots/screenshot.png)
 
-**Categories** ist eine grafische Anwendung für GNOME/Linux, mit der sich Kontakte anhand ihrer vCard-Kategorien filtern und bearbeiten lassen. Zudem wird das Senden von Emails an die gefilterten Kontakte vorebreitet.
+**Categories** is a graphical application for GNOME/Linux that allows contacts to be filtered and edited based on their vCard categories. It also provides a way to prepare emails addressed to filtered contacts.
 
-Die Idee zu diesem Projekt entstand aus dem Wunsch, nicht für verschiedene Anwendungen eigene Emailverteilerlisten anlegen zu müssen, welche sich oft schlecht synchronisieren lassen und auch gut gepflegt sein müssen. Zudem lässt sich bei einer alternativen Organisation der Kontakte in verschiedenen Adressbüchern nur eine eindimensionale Gruppierung realisieren. 
+The idea for this project arose from the desire to avoid maintaining separate email distribution lists for different applications. Such lists are often difficult to synchronize and require regular maintenance. In addition, organizing contacts in separate address books only allows for one-dimensional grouping.
 
-Die Anwendung greift auf die Kontaktadressbücher des **Evolution Data Server (EDS)** zu. Sie richtet sich an Nutzerinnen und Nutzer, die ihre Kontakte bereits über GNOME, Evolution oder kompatible Adressbuchquellen verwalten und diese anhand von Kategorien organisieren möchten.
+The application accesses contact address books through the **Evolution Data Server (EDS)**. It is intended for users who already manage their contacts through GNOME, Evolution, or compatible address book sources and want to organize them using categories.
 
-**Categories** versteht sich nicht als Adressbuch, weshalb über die vCard-Kategorien ("categories") hinaus keine Bearbeitung von Kontakten möglich sein wird. Auch eine Dublettensuche wird nicht zur Verfügung gestellt.   
+**Categories** is not intended to be a full address book. Therefore, no contact editing beyond vCard categories (`categories`) will be supported. Duplicate detection will not be provided either.
 
-## Funktionen
+## Features
 
-- **Kontakte anzeigen:** Kontakte aus den verfügbaren EDS-Adressbüchern laden und alphabetisch sortiert anzeigen.
-- **Nach Kategorien filtern:** Kontakte anhand ihrer vCard-Kategorien suchen und eingrenzen.
-- **Kategorien verknüpfen:** Mehrere ausgewählte Kategorien über ODER- beziehungsweise UND-Verknüpfungen kombinieren.
-- **Erweiterte Filter:** Eigene Filterausdrücke mit `AND`, `OR`, `NOT` und Klammern formulieren.
-- **Kategorien bearbeiten:** Kategorien bei ausgewählten Kontakten hinzufügen, entfernen und neu anlegen.
-- **Änderungen speichern:** Bearbeitete Kategorien in die jeweiligen Adressbücher zurückschreiben.
-- **E-Mails adressieren:** E-Mails an ausgewählte Kontakte vorbereiten beziehungsweise adressieren.
+- **Display contacts:** Load contacts from available EDS address books and display them in alphabetical order.
+- **Filter by categories:** Search and narrow down contacts based on their vCard categories.
+- **Combine categories:** Combine multiple selected categories using OR and AND operations.
+- **Advanced filters:** Create custom filter expressions using `AND`, `OR`, `NOT`, and parentheses.
+- **Edit categories:** Add, remove, and create categories for selected contacts.
+- **Save changes:** Write modified categories back to the respective address books.
+- **Address emails:** Prepare or address emails to selected contacts.
 
-## Voraussetzungen
+## Requirements
 
-Categories benötigt eine Linux-Umgebung mit den folgenden Komponenten:
+Categories requires a Linux environment with the following components:
 
 - Python 3
 - GTK 4
 - libadwaita
 - PyGObject (`gi`)
-- Evolution Data Server einschließlich der Python-Introspektionsschnittstellen
-- Eingerichtete und zugängliche Kontaktadressbücher im Evolution Data Server
+- Evolution Data Server, including its Python introspection bindings
+- Configured and accessible contact address books in Evolution Data Server
 
-Die genaue Verfügbarkeit der benötigten Pakete hängt von der verwendeten Linux-Distribution ab.
+The availability of the required packages depends on the Linux distribution being used.
 
-## Installation und Start
+## Installation and startup
 
-Categories wird zunächst direkt aus dem Quellcode ausgeführt. Ein distributionsübergreifendes Installationspaket ist derzeit nicht enthalten.
+Categories is currently run directly from its source code. A cross-distribution installation package is not yet available.
 
-### 1. Repository herunterladen
+### 1. Download the repository
 
-Lade das Repository über GitHub herunter und entpacke es. Alternativ kannst du das Repository mit Git klonen:
+Download the repository from GitHub and extract it. Alternatively, clone the repository using Git:
 
 ```bash
 git clone https://github.com/chcervus/Categories.git
 cd Categories
 ```
 
-### 2. Abhängigkeiten installieren
+### 2. Install dependencies
 
-Installiere Python 3, GTK 4, libadwaita, PyGObject und die benötigten Evolution-Data-Server-Komponenten über die Paketverwaltung deiner Distribution.
+Install Python 3, GTK 4, libadwaita, PyGObject, and the required Evolution Data Server components using your distribution's package manager.
 
-### 3. Anwendung starten
+### 3. Run the application
 
-Starte die Anwendung aus dem Projektverzeichnis:
-
-```bash
-python3 categories-frontend.py
-```
-
-Auf Fedora kann dafür beispielsweise der folgende Befehl verwendet werden:
+Start the application from the project directory:
 
 ```bash
-/usr/bin/python3 categories-frontend.py
+python3 categories_frontend.py
 ```
 
-Die Anwendung benötigt Zugriff auf den Evolution Data Server und die dort eingerichteten Adressbücher.
+On Fedora, you can use the following command, for example:
 
-## Projektstruktur
+```bash
+/usr/bin/python3 categories_frontend.py
+```
 
-- `categories-frontend.py` enthält die grafische Benutzeroberfläche und die Anwendungslogik.
-- `kontakt_backend.py` enthält die Funktionen für den Zugriff auf Kontakte und Kategorien sowie die Filterauswertung.
-- `data/icons/` enthält das Anwendungsicon für die GNOME-Integration.
+The application requires access to Evolution Data Server and the address books configured there.
 
-## Lizenz
+## Project structure
 
-Categories wird unter der **GNU General Public License v3.0 or later (GPL-3.0-or-later)** veröffentlicht.
+- `categories-frontend.py` contains the graphical user interface and application logic.
+- `kontakt_backend.py` contains the functions for accessing contacts and categories, as well as filter evaluation.
+- `data/icons/` contains the application icon used for GNOME integration.
 
-Der vollständige Lizenztext befindet sich in der Datei `LICENSE`.
+## License
 
-## Entwicklungsstatus
+Categories is released under the **GNU General Public License v3.0 or later (GPL-3.0-or-later)**.
 
-Categories befindet sich in Entwicklung. Die Anwendung wird zunächst als Quellcode veröffentlicht. Installation und Ausführung erfolgen vorerst manuell.
+The full license text is available in the `LICENSE` file.
 
-**Fehlerberichte, Verbesserungsvorschläge und Beiträge sind willkommen.** Das Projekt befindet sich in der **Testphase**
+## Development status
+
+Categories is under active development. The application is initially being released as source code. Installation and execution currently need to be performed manually.
+
+**Bug reports, suggestions for improvements, and contributions are welcome.** The project is currently in the **testing phase**.
 
 ### To do:
-- [ ] Verbesserungen an der Oberfläche: Filter-, Selektierinformationen besser anordnen
-- [ ] Symbole einfügen 
-- [ ] Hovereffekt korrigieren (Rechtecke erscheinen)
-- [ ] Speicherprobleme testen
-- [ ] Language - Pack einrichten
 
-### Bemerkung zu KI
+- [ ] Improve the user interface: better arrange filter and selection information
+- [ ] Add icons
+- [ ] Fix hover effect (rectangles appear)
+- [ ] Test saving issues
+- [ ] Set up a language pack
 
-Die Anwendung wurde mit Unterstützung von LLMs erstellt. Diese dienen mir als Werkzeuge beim Programmieren. 
-Die Unterstützung umfasste insbesondere:
+### Note on AI
 
-- Erklärungen zu Python, GTK und Evolution Data Server (EDS)  
-- Unterstützung bei der Fehlersuche
-- Vrbesserung und Erweiterung der Filterlogik
-- Unterstützung bei der Gestaltung des Speichervorgangs, insbesondere bei Versionsprüfungen, Hintergrundthreads und der Rückmeldung an die GTK-Oberfläche
-- Überlegungen zur Fehlerbehandlung und zum Schutz personenbezogener Kontaktdaten
+The application was developed with the assistance of LLMs. I use them as tools for programming.
 
-Die Vorschläge wurden im Zusammenhang mit dem bestehenden Code geprüft und schrittweise übernommen oder angepasst. 
+The assistance particularly included:
 
-Die Ideen, die Gestaltung und der Aufbau des Projekts liegen in meiner Verantwortung.
+- Explanations of Python, GTK, and Evolution Data Server (EDS)
+- Assistance with debugging
+- Improving and extending the filter logic
+- Assistance with the design of the saving process, particularly version checks, background threads, and feedback to the GTK interface
+- Considerations regarding error handling and the protection of personal contact data
 
+The suggestions were reviewed in the context of the existing code and gradually adopted or adapted.
 
+The ideas, design, and structure of the project remain my responsibility.

@@ -80,7 +80,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         self.kontakte_icon = Gtk.Image.new_from_icon_name(
             "avatar-default-symbolic"
         )
-
+        self.kontakte_icon.set_pixel_size(20)
         titel_zeile.append(self.kontakte_icon)
 
         titel = Gtk.Label(
@@ -236,24 +236,34 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         rechte_seite.set_margin_end(12)
 
         # Adressbücher
+        adressbuch_titel_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=8
+        )
+
+        adressbuch_icon = Gtk.Image.new_from_icon_name(
+            "x-office-address-book-symbolic"
+        )
+        adressbuch_icon.set_pixel_size(20)
+        adressbuch_titel_box.append(adressbuch_icon)
+
         adressbuch_titel = Gtk.Label(
             label="Adressbücher"
         )
-
         adressbuch_titel.set_xalign(0)
         adressbuch_titel.add_css_class("title-3")
 
-        rechte_seite.append(adressbuch_titel)
+        adressbuch_titel_box.append(adressbuch_titel)
+        rechte_seite.append(adressbuch_titel_box)
 
         self.adressbuch_bereich = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=0
         )
 
-        rechte_seite.append(
-            self.adressbuch_bereich
-        )
+        rechte_seite.append(self.adressbuch_bereich)
         self.adressbuecher_anzeigen()
+
         # Trennlinie
         trennlinie = Gtk.Separator(
             orientation=Gtk.Orientation.HORIZONTAL
@@ -262,26 +272,46 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         rechte_seite.append(trennlinie)
 
 
+         # Filter
+        filter_titel_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=8
+        )
 
-        # Kategorien
+        filter_icon = Gtk.Image.new_from_icon_name(
+            "go-down-symbolic"
+        )
+        filter_icon.set_pixel_size(20)
+        filter_titel_box.append(filter_icon)
+
         heading_label = Gtk.Label(label="Filter")
         heading_label.set_xalign(0)
         heading_label.add_css_class("title-3")
-        rechte_seite.append(
-            heading_label
-        )
 
+        filter_titel_box.append(heading_label)
+        rechte_seite.append(filter_titel_box)
+
+        # Kategorien
+        kategorien_titel_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=8
+        )
+        kategorien_titel_box.set_margin_top(12)
+        kategorien_icon = Gtk.Image.new_from_icon_name(
+            "preferences-color-symbolic"
+                )
+        kategorien_icon.set_pixel_size(20)
+        kategorien_titel_box.append(kategorien_icon)
 
         kategorien_titel = Gtk.Label(
             label="Kategorien"
         )
-
         kategorien_titel.set_xalign(0)
         kategorien_titel.add_css_class("heading")
 
-        rechte_seite.append(
-            kategorien_titel
-        )
+        kategorien_titel_box.append(kategorien_titel)
+        rechte_seite.append(kategorien_titel_box)
+
 
         self.kategorien_bereich = Gtk.FlowBox()
 
@@ -367,7 +397,11 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         self.experten_button = Gtk.Button.new_from_icon_name(
             "preferences-other-symbolic"
         )
+        self.experten_button.set_child(
+        Gtk.Image.new_from_icon_name("preferences-other-symbolic")
+        )
 
+        self.experten_button.get_child().set_pixel_size(20)
         self.experten_button.set_tooltip_text(
             "Expertenmodus ein- oder ausblenden"
         )
@@ -470,7 +504,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
 
 
-    
+
 
 
         # ---------------------------------------------------------

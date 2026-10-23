@@ -131,8 +131,6 @@ def filter_kompilieren(ausdruck, alle_kategorien):
             if i == len(ausdruck):
                 raise ValueError("Nicht geschlossenes Anfuehrungszeichen.")
             name = ''.join(chars); i += 1
-            if name.casefold() not in {n.casefold() for n in namen}:
-                raise ValueError("Unbekannte Kategorie: " + name)
             tokens.append(('CATEGORY', name))
         else:
             rest = ausdruck[i:]

@@ -14,6 +14,9 @@ from kontakt_backend import (
     speichere_kategorien_mehrere_async
 )
 
+
+from pathlib import Path
+
 class KontaktfilterWindow(Adw.ApplicationWindow):
 
     def __init__(self, **kwargs):
@@ -173,8 +176,26 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         kopf_links.append(self.bearbeiten_button)
         kopf_links.append(self.email_button)
         linke_seite.append(kopf_links)
-    # Kontaktliste
+
+        # Kontaktliste
+
         self.liste = Gtk.ListBox()
+        # Stil wie die Navigationssidebar
+        self.liste.add_css_class("navigation-sidebar")
+
+        css_datei = Path(__file__).resolve().parent / "style.css"
+
+        css = Gtk.CssProvider()
+        css.load_from_path(str(css_datei))
+
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(),
+            css,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+
+        self._kontaktlisten_css = css
 
         self.liste.set_selection_mode(
             Gtk.SelectionMode.MULTIPLE
@@ -260,6 +281,13 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             orientation=Gtk.Orientation.VERTICAL,
             spacing=0
         )
+        self.adressbuch_bereich.add_css_class("separated")
+        # Alle Adressbücher als gemeinsamer, weiß hinterlegter Bereich.
+        self.adressbuch_bereich.add_css_class("card")
+        self.adressbuch_bereich.set_margin_top(4)
+        self.adressbuch_bereich.set_margin_bottom(4)
+        self.adressbuch_bereich.set_margin_start(4)
+        self.adressbuch_bereich.set_margin_end(4)
 
         rechte_seite.append(self.adressbuch_bereich)
         self.adressbuecher_anzeigen()
@@ -291,12 +319,17 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         filter_titel_box.append(heading_label)
         rechte_seite.append(filter_titel_box)
 
+
+
+
+
         # Kategorien
         kategorien_titel_box = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL,
             spacing=8
         )
         kategorien_titel_box.set_margin_top(12)
+        kategorien_titel_box.set_margin_start(12)
         kategorien_icon = Gtk.Image.new_from_icon_name(
             "preferences-color-symbolic"
                 )
@@ -310,11 +343,30 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         kategorien_titel.add_css_class("heading")
 
         kategorien_titel_box.append(kategorien_titel)
-        rechte_seite.append(kategorien_titel_box)
+
+
+        # Gemeinsame Karte für Kategorien und Verknüpfung
+        kategorien_karte = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=0
+        )
+        kategorien_karte.add_css_class("card")
+        kategorien_karte.set_margin_top(4)
+        kategorien_karte.set_margin_bottom(4)
+        kategorien_karte.set_margin_start(4)
+        kategorien_karte.set_margin_end(4)
+        #Überschrift innerhalb der Karte
+        kategorien_karte.append(kategorien_titel_box)
+
+
+
 
 
         self.kategorien_bereich = Gtk.FlowBox()
-
+        self.kategorien_bereich.set_margin_start(12)
+        self.kategorien_bereich.set_margin_end(12)
+        self.kategorien_bereich.set_margin_top(12)
+        self.kategorien_bereich.set_margin_bottom(12)
         self.kategorien_bereich.set_selection_mode(
             Gtk.SelectionMode.NONE
         )
@@ -322,21 +374,18 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         self.kategorien_bereich.set_row_spacing(6)
         self.kategorien_bereich.set_column_spacing(6)
 
-        rechte_seite.append(
+        kategorien_karte.append(
             self.kategorien_bereich
         )
 
 
-        # Verknüpfung der Kategorien
-        verknuepfung_karte = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
-            spacing=12
+        # Trennlinie zwischen Kategorien und Verknüpfung
+        kategorien_trennlinie = Gtk.Separator(
+            orientation=Gtk.Orientation.HORIZONTAL
         )
-        verknuepfung_karte.add_css_class("card")
-        verknuepfung_karte.set_margin_top(4)
-        verknuepfung_karte.set_margin_bottom(4)
-        verknuepfung_karte.set_margin_start(4)
-        verknuepfung_karte.set_margin_end(4)
+        kategorien_karte.append(kategorien_trennlinie)
+
+
 
         # Innenabstand durch einen umgebenden Container
         verknuepfung_box = Gtk.Box(
@@ -380,15 +429,43 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             self.verknuepfung_gruppe
         )
 
-        verknuepfung_karte.append(verknuepfung_box)
-        rechte_seite.append(verknuepfung_karte)
+        kategorien_karte.append(verknuepfung_box)
+        rechte_seite.append(kategorien_karte)
 
         # Trennlinie vor dem Expertenmodus
         experten_trennlinie = Gtk.Separator(
             orientation=Gtk.Orientation.HORIZONTAL
         )
         rechte_seite.append(experten_trennlinie)
-        # Expertenmodus
+
+
+
+    # Expertenmodus
+
+            # Expertenmodus-Karte
+        experten_karte = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=0
+        )
+        experten_karte.add_css_class("card")
+        experten_karte.set_margin_top(4)
+        experten_karte.set_margin_bottom(4)
+        experten_karte.set_margin_start(4)
+        experten_karte.set_margin_end(4)
+
+        # Innenabstand innerhalb der Karte
+        experten_inhalt = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=12
+        )
+        experten_inhalt.set_margin_top(12)
+        experten_inhalt.set_margin_bottom(12)
+        experten_inhalt.set_margin_start(12)
+        experten_inhalt.set_margin_end(12)
+
+        experten_karte.append(experten_inhalt)
+
+        # Überschrift Expertenmodus
         filter_kopf = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL,
             spacing=6
@@ -398,14 +475,14 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             "preferences-other-symbolic"
         )
         self.experten_button.set_child(
-        Gtk.Image.new_from_icon_name("preferences-other-symbolic")
+            Gtk.Image.new_from_icon_name(
+                "preferences-other-symbolic"
+            )
         )
-
         self.experten_button.get_child().set_pixel_size(20)
         self.experten_button.set_tooltip_text(
             "Expertenmodus ein- oder ausblenden"
         )
-
         self.experten_button.connect(
             "clicked",
             self.expertenmodus_umschalten
@@ -416,61 +493,46 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         filter_titel = Gtk.Label(
             label="Expertenmodus"
         )
-
         filter_titel.set_xalign(0)
         filter_titel.add_css_class("heading")
 
         filter_kopf.append(filter_titel)
-        rechte_seite.append(filter_kopf)
+        experten_inhalt.append(filter_kopf)
 
+        # Filtereingabe
         self.filter_entry = Gtk.Entry()
+        self.filter_entry.set_hexpand(True)
+        self.filter_entry.set_placeholder_text(
+            "Filter, z. B. Freunde AND Verein"
+        )
         self.filter_entry.connect(
             "notify::has-focus",
             self.filter_fokus_geaendert
         )
-
-        self.filter_entry.set_placeholder_text(
-            "Filter, z. B. Freunde AND Verein"
-        )
-
         self.filter_entry.connect(
             "activate",
             self.filter_anwenden
         )
-        # Filter nicht bei jedem Tastendruck vollstaendig neu aufbauen.
-        self.filter_entry.connect("changed", self.filter_geaendert)
-
-
-        # Eingabezeile mit Lösch-Button
-        self.filter_box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            spacing=6
+        self.filter_entry.connect(
+            "changed",
+            self.filter_geaendert
         )
 
-        self.filter_box.set_hexpand(True)
-
-        self.filter_entry.set_hexpand(True)
-        self.filter_box.append(self.filter_entry)
-
-
-        # Expertenmodus: Eingabezeile und Erklärung
+        # Filtereingabe und Lösch-Button
         self.filter_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=6
         )
         self.filter_box.set_hexpand(True)
 
-        # Eingabefeld und Lösch-Button nebeneinander
         filter_zeile = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL,
             spacing=6
         )
         filter_zeile.set_hexpand(True)
 
-        self.filter_entry.set_hexpand(True)
         filter_zeile.append(self.filter_entry)
 
-        # Regel löschen
         loeschen_button = Gtk.Button.new_from_icon_name(
             "edit-clear-symbolic"
         )
@@ -500,10 +562,9 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         self.filter_box.append(experten_hinweis)
 
         self.filter_box.set_visible(False)
-        rechte_seite.append(self.filter_box)
+        experten_inhalt.append(self.filter_box)
 
-
-
+        rechte_seite.append(experten_karte)
 
 
 
@@ -579,7 +640,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             if len(self.ausgewaehlte_kontakte) != 0:
                 self.auswahl_aufheben()
     # =============================================================
-    # Kontaktzeile
+    # Adressbuecher
     # =============================================================
     def adressbuecher_anzeigen(self):
 
@@ -606,7 +667,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             switch.set_valign(
                 Gtk.Align.CENTER
             )
-            # PHASE 1: notify::active sieht den bereits aktualisierten Zustand.
+            # notify::active sieht den bereits aktualisierten Zustand.
             switch.connect(
                 "notify::active",
                 self.adressbuch_switch_geaendert,
@@ -614,13 +675,20 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             )
             zeile.add_suffix(switch)
 
-            self.adressbuch_bereich.append(
-                zeile
-            )
+
+            self.adressbuch_bereich.append(zeile)
+
+            if adressbuch != self.adressbuecher[-1]:
+                separator = Gtk.Separator(
+                    orientation=Gtk.Orientation.HORIZONTAL
+                )
+                self.adressbuch_bereich.append(separator)
+
 
             self.adressbuch_switches[
                 adressbuch["uid"]
             ] = switch
+
     def aktive_adressbuch_uids(self):
 
         aktive_uids = []

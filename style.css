@@ -1,0 +1,8 @@
+/* Kontaktliste */
+list.navigation-sidebar row:selected {
+    background-color: alpha(@accent_bg_color, 0.25);
+}
+
+list.navigation-sidebar row:selected label {
+    color: @window_fg_color;
+}

@@ -85,11 +85,13 @@ Categories is under active development. The application is initially being relea
 
 ### To do:
 
-- [ ] Improve the user interface: better arrange filter and selection information
-- [ ] Add icons
+- [x] Improve the user interface: better arrange filter and selection information
+- [x] Add icons
+- [ ] Improve icons 
 - [ ] Fix hover effect (rectangles appear)
 - [ ] Test saving issues
 - [ ] Set up a language pack
+- [ ] Disabled address books (gnome account) should not be shown on the GUI.
 
 ### Note on AI
 

@@ -23,7 +23,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         super().__init__(**kwargs)
 
         self.set_title("Categories")
-        self.set_default_size(1300, 800)
+        self.set_default_size(1000, 500)
 
         self.kontakte = []
         # Generation verhindert, dass veraltete Ladejobs gewinnen.
@@ -51,7 +51,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             orientation=Gtk.Orientation.HORIZONTAL
         )
 
-        paned.set_position(650)
+        paned.set_position(450)
 
         # ---------------------------------------------------------
         # LINKE SEITE: Kontakte
@@ -116,6 +116,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             label="Kontakte werden geladen …"
         )
         self.status_label.set_xalign(0)
+        self.status_label.set_wrap(True)
         self.status_label.add_css_class("dim-label")
 
         kopf_inhalt.append(self.status_label)

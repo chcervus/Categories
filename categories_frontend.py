@@ -407,7 +407,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         verknuepfung_box.append(verknuepfung_titel)
 
         self.verknuepfung_gruppe = Adw.ToggleGroup.new()
-        self.verknuepfung_gruppe.add_css_class("round")
+        self.verknuepfung_gruppe.add_css_class("boxed-list")
         self.verknuepfung_gruppe.set_homogeneous(True)
 
         self.or_toggle = Adw.Toggle.new()

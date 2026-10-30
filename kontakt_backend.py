@@ -80,7 +80,25 @@ def lade_adressbuecher():
 
     adressbuecher = []
 
+def lade_adressbuecher():
+    """Lädt alle aktivierten EDS-Adressbücher."""
+
+    registry = EDataServer.SourceRegistry.new_sync(None)
+
+    quellen = registry.list_sources(
+        EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK
+    )
+
+    adressbuecher = []
+
     for quelle in quellen:
+
+        if not quelle.get_enabled():
+            print(
+                f"Überspringe deaktiviertes Adressbuch: "
+                f"{quelle.get_display_name()}"
+            )
+            continue
 
         adressbuch = {
             "uid": quelle.get_uid(),

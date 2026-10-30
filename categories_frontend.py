@@ -1253,6 +1253,8 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
                 and not self.expertenfilter_verwendet
             ):
                 button.add_css_class("success")
+        # Bedienbarkeit an den aktuellen Modus anpassen
+        self.filter_fokus_geaendert(None, None)
 
     def kategorie_geklickt(self, button, kategorie):
 

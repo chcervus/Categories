@@ -91,7 +91,7 @@ Categories is under active development. The application is initially being relea
 - [ ] Fix hover effect (rectangles appear)
 - [ ] Test saving issues
 - [ ] Set up a language pack
-- [ ] Disabled address books (gnome account) should not be shown on the GUI.
+- [X] Disabled address books (gnome account) should not be shown on the GUI.
 
 ### Note on AI
 

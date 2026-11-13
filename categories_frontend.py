@@ -412,12 +412,12 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
         self.or_toggle = Adw.Toggle.new()
         self.or_toggle.set_name("or")
-        self.or_toggle.set_label("Zusammenführen")
+        self.or_toggle.set_label("vereinen")
         self.verknuepfung_gruppe.add(self.or_toggle)
 
         self.and_toggle = Adw.Toggle.new()
         self.and_toggle.set_name("and")
-        self.and_toggle.set_label("Überlappen")
+        self.and_toggle.set_label("überlappen")
         self.verknuepfung_gruppe.add(self.and_toggle)
 
         self.verknuepfung_gruppe.set_active_name("or")

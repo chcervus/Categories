@@ -228,7 +228,7 @@ def filter_auswerten(kategorien, ausdruck, alle_kategorien):
     return filter_passt(kategorien, filter_kompilieren(ausdruck, alle_kategorien))
 
 
-# PHASE 1: Eine frische EDS-Version statt des beim Laden gespeicherten
+# Eine frische EDS-Version statt des beim Laden gespeicherten
 # EBookContact verändern. Andere Kontaktfelder werden nicht überschrieben.
 # Wenn sich Kategorien seit dem Laden geändert haben, nicht blind speichern.
 def _kategorien_aus_eds(eds_kontakt):

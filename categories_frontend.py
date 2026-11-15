@@ -1328,22 +1328,36 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
     def kontakte_laden(self, adressbuch_uids, generation):
         try:
-            kontakte = lade_kontakte(adressbuch_uids)
-            fehler = None
+            kontakte, fehler = lade_kontakte(adressbuch_uids)
         except Exception as exc:
             kontakte = None
-            fehler = str(exc)
-        GLib.idle_add(self.kontakte_laden_fertig, generation, kontakte, fehler)
+            fehler = [str(exc)]
+
+        GLib.idle_add(
+            self.kontakte_laden_fertig,
+            generation,
+            kontakte,
+            fehler
+        )
 
     def kontakte_laden_fertig(self, generation, kontakte, fehler):
         if generation != self._lade_generation:
             return GLib.SOURCE_REMOVE
-        if fehler is not None:
+
+        if kontakte is None:
             self.status_label.set_text("Kontakte konnten nicht geladen werden")
-            self.ladefehler_anzeigen(fehler)
+            self.ladefehler_anzeigen("\n".join(fehler))
             return GLib.SOURCE_REMOVE
+
         self.kontakte = kontakte
         self.kontakte_anzeigen()
+
+        if fehler:
+            self.ladefehler_anzeigen(
+                "Folgende Adressbücher konnten nicht geladen werden:\n\n"
+                + "\n".join(fehler)
+            )
+
         return GLib.SOURCE_REMOVE
 
     def ladefehler_anzeigen(self, fehler):

@@ -10,26 +10,37 @@ from gi.repository import EBook, EDataServer, GLib, EBookContacts
 
 def lade_kontakte(adressbuch_uids=None):
     """Lädt Kontakte aus den angegebenen EDS-Adressbüchern parallel."""
+
     if adressbuch_uids is None:
         adressbuecher = lade_adressbuecher()
-        adressbuch_uids = [adressbuch["uid"] for adressbuch in adressbuecher]
+        adressbuch_uids = [
+            adressbuch["uid"] for adressbuch in adressbuecher
+        ]
 
     def lade_ein_adressbuch(uid):
         """Verbindet sich mit einer Quelle und bereitet deren Kontakte auf."""
+
         registry = EDataServer.SourceRegistry.new_sync(None)
         source = registry.ref_source(uid)
+
         if source is None:
-            return []
+            return [], f"Quelle {uid} wurde nicht gefunden."
 
         try:
-            client = EBook.BookClient.connect_sync(source, 1, None)
+            client = EBook.BookClient.connect_sync(source, 3, None)
             success, contacts = client.get_contacts_sync("", None)
+
             if not success:
-                return []
-        except Exception:
-            return []
+                return [], (
+                    f"{source.get_display_name()}: "
+                    "Kontakte konnten nicht abgerufen werden."
+                )
+
+        except Exception as exc:
+            return [], f"{source.get_display_name()}: {exc}"
 
         ergebnis_buch = []
+
         for contact in contacts:
             kontakt = {
                 "name": "",
@@ -43,7 +54,9 @@ def lade_kontakte(adressbuch_uids=None):
 
             for attr in contact.get_attributes():
                 feld = attr.get_name().upper()
-                werte = [wert.str for wert in attr.get_values_decoded()]
+                werte = [
+                    wert.str for wert in attr.get_values_decoded()
+                ]
 
                 if feld == "FN":
                     kontakt["name"] = werte[0] if werte else ""
@@ -55,30 +68,32 @@ def lade_kontakte(adressbuch_uids=None):
                     kontakt["uid"] = werte[0] if werte else ""
 
             ergebnis_buch.append(kontakt)
-        return ergebnis_buch
 
-    # Die Adressbücher werden parallel geladen; executor.map erhält die
-    # ursprüngliche Reihenfolge der Adressbuch-UIDs im Gesamtergebnis.
+        return ergebnis_buch, None
+
     from concurrent.futures import ThreadPoolExecutor
 
     if not adressbuch_uids:
-        return []
+        return [], []
 
-    with ThreadPoolExecutor(max_workers=min(len(adressbuch_uids), 4)) as executor:
-        teil_ergebnisse = list(executor.map(lade_ein_adressbuch, adressbuch_uids))
+    with ThreadPoolExecutor(
+        max_workers=min(len(adressbuch_uids), 4)
+    ) as executor:
+        teil_ergebnisse = list(
+            executor.map(lade_ein_adressbuch, adressbuch_uids)
+        )
 
-    return [kontakt for teil in teil_ergebnisse for kontakt in teil]
+    kontakte = []
+    fehler = []
 
-def lade_adressbuecher():
-    """Lädt alle in EDS registrierten Adressbücher."""
+    for teil_kontakte, teil_fehler in teil_ergebnisse:
+        kontakte.extend(teil_kontakte)
 
-    registry = EDataServer.SourceRegistry.new_sync(None)
+        if teil_fehler:
+            fehler.append(teil_fehler)
 
-    quellen = registry.list_sources(
-        EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK
-    )
+    return kontakte, fehler
 
-    adressbuecher = []
 
 def lade_adressbuecher():
     """Lädt alle aktivierten EDS-Adressbücher."""
@@ -292,7 +307,7 @@ def speichere_kategorien(kontakt, neue_kategorien):
     source = registry.ref_source(kontakt["adressbuch_uid"])
     if source is None:
         raise RuntimeError("Adressbuch ist nicht mehr vorhanden.")
-    client = EBook.BookClient.connect_sync(source, 1, None)
+    client = EBook.BookClient.connect_sync(source, 3, None)
     kategorien = _aktuelle_kategorien_speichern(client, kontakt, delta)
     kontakt["kategorien"] = kategorien
     return True
@@ -337,7 +352,7 @@ def speichere_kategorien_mehrere_async(kontakte, kontakt_aenderungen, callback):
                         if source is None:
                             raise RuntimeError("Adressbuch nicht mehr vorhanden.")
                         clients[buch_uid] = EBook.BookClient.connect_sync(
-                            source, 1, None
+                            source, 3, None
                         )
                     neu = _aktuelle_kategorien_speichern(
                         clients[buch_uid], kontakt, delta

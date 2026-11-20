@@ -9,7 +9,6 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Gio
 from kontakt_backend import (
     lade_kontakte,
     lade_adressbuecher,
-    filter_auswerten,
     filter_kompilieren, filter_passt, filter_kategorie_zitieren,
     speichere_kategorien_mehrere_async
 )
@@ -32,13 +31,17 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         #  Debounce fuer Texteingaben; Schutz vor Toggle-Rueckkopplung.
         self._filter_timer = None
         self._auswahl_synchronisiert = False
-        adressbuecher = lade_adressbuecher()
+        self.ladefehler = None
+
+        try:
+            self.adressbuecher = lade_adressbuecher()
+        except RuntimeError as exc:
+            self.ladefehler = str(exc)
+            self.adressbuecher = []
         self.ausgewaehlte_kontakte = []
 
         self.ausgewaehlte_kategorien = set()
         self.kategorien_verknuepfung = "OR"
-
-        self.adressbuecher = []
         self.adressbuch_switches = {}
         # Zuordnung ListBoxRow -> Kontakt
         self.zeilen_kontakte = {}
@@ -625,13 +628,13 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         # ---------------------------------------------------------
         aktive_uids = self.aktive_adressbuch_uids()
 
-        # PHASE 1: Jede neue Auswahl invalidiert ältere Hintergrundjobs.
+        # Jede neue Auswahl invalidiert ältere Hintergrundjobs.
         self.kontakte_laden_starten(aktive_uids)
     # =============================================================
     # Menue ueber Kontaktzeile
     # =============================================================
     def auswahl_button_geaendert(self, button):
-        # PHASE 3: Programmgesteuerte Updates duerfen kein Toggle ausloesen.
+        #Programmgesteuerte Updates duerfen kein Toggle ausloesen.
         if self._auswahl_synchronisiert:
             return
         if button.get_active():
@@ -644,9 +647,6 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
     # Adressbuecher
     # =============================================================
     def adressbuecher_anzeigen(self):
-
-        self.adressbuecher = lade_adressbuecher()
-
         # Alten Inhalt entfernen
         while child := self.adressbuch_bereich.get_first_child():
             self.adressbuch_bereich.remove(child)
@@ -708,7 +708,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         param,
         adressbuch_uid
     ):
-        # PHASE 1: Aktiven Schalterzustand erst nach dessen Änderung lesen.
+        # Aktiven Schalterzustand erst nach dessen Änderung lesen.
         if self._speichern_aktiv:
             return
         # Nur beim Deaktivieren zurücksetzen
@@ -739,10 +739,10 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         # Aktive Adressbücher ermitteln
         aktive_uids = self.aktive_adressbuch_uids()
 
-        # PHASE 1: Vorherige Ladejobs dürfen dieses Ergebnis nicht überschreiben.
+        # Vorherige Ladejobs dürfen dieses Ergebnis nicht überschreiben.
         self.kontakte_laden_starten(aktive_uids)
 
-
+    # Alten Inhalt entfernen
 
     def kontakt_zeile_erstellen(self, kontakt):
 
@@ -895,11 +895,15 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         finally:
             self._auswahl_synchronisiert = False
 
-        self.status_label.set_text(
-            f"{anzahl_sichtbar} gefunden - "
-            f"{anzahl} ausgewählt"
-        )
-
+        if self.ladefehler:
+            self.status_label.set_text(
+                f"Fehler beim Laden der Adressbücher: {self.ladefehler}"
+            )
+        else:
+            self.status_label.set_text(
+                f"{anzahl_sichtbar} gefunden - "
+                f"{anzahl} ausgewählt"
+            )
     def liste_tastatur(
         self,
         controller,
@@ -967,7 +971,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             self.liste.select_row(zeile)
 
 
-    # PHASE 2: Grundvalidierung gegen defekte mailto-URIs und Steuerzeichen.
+    # Grundvalidierung gegen defekte mailto-URIs und Steuerzeichen.
     @staticmethod
     def gueltige_email(adresse):
         if not isinstance(adresse, str) or len(adresse) > 254:
@@ -1011,7 +1015,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
         empfaenger = ",".join(adressen)
         uri = "mailto:?" + urlencode({feld: empfaenger})
-        # PHASE 2: Grenzen der Zielanwendung nicht unkontrolliert ueberschreiten.
+        #Grenzen der Zielanwendung nicht unkontrolliert ueberschreiten.
         if len(uri) > 1800:
             self.email_fehler_anzeigen(
                 "Zu viele Empfaenger fuer einen mailto-Link. "
@@ -1048,7 +1052,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
     # =============================================================
 
 
-    # PHASE 3: Texteingabe um 200 ms entprellen, Enter wirkt unmittelbar.
+    # Texteingabe um 200 ms entprellen, Enter wirkt unmittelbar.
     def filter_geaendert(self, entry):
         if self._filter_timer is not None:
             GLib.source_remove(self._filter_timer)
@@ -1060,7 +1064,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         return GLib.SOURCE_REMOVE
 
     def filter_anwenden(self, entry):
-        # PHASE 2/3: Einmal parsen, danach gegen alle Kontakte auswerten.
+        # Einmal parsen, danach gegen alle Kontakte auswerten.
         if self._filter_timer is not None:
             GLib.source_remove(self._filter_timer)
             self._filter_timer = None
@@ -1269,12 +1273,6 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
         self.kategorienfilter_aktualisieren()
 
-    def operator_geklickt(
-        self,
-        button,
-        operator
-    ):
-
         ausdruck = self.filter_entry.get_text().strip()
 
         if not ausdruck:
@@ -1315,18 +1313,25 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
     # Kontakte laden
     # =============================================================
 
-    # PHASE 1: Ein Hintergrundjob darf GTK-Zustand nicht direkt verändern.
-    # Nur die jüngste Generation wird auf dem GTK-Hauptthread übernommen.
-    def kontakte_laden_starten(self, adressbuch_uids):
+    def kontakte_laden_starten(
+        self, adressbuch_uids, auswahl_wiederherstellen=None
+    ):
         self._lade_generation += 1
         generation = self._lade_generation
+
         threading.Thread(
             target=self.kontakte_laden,
-            args=(list(adressbuch_uids), generation),
+            args=(
+                list(adressbuch_uids),
+                generation,
+                auswahl_wiederherstellen
+            ),
             daemon=True
         ).start()
 
-    def kontakte_laden(self, adressbuch_uids, generation):
+    def kontakte_laden(
+        self, adressbuch_uids, generation, auswahl_wiederherstellen
+    ):
         try:
             kontakte, fehler = lade_kontakte(adressbuch_uids)
         except Exception as exc:
@@ -1337,20 +1342,36 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             self.kontakte_laden_fertig,
             generation,
             kontakte,
-            fehler
+            fehler,
+            auswahl_wiederherstellen
         )
 
-    def kontakte_laden_fertig(self, generation, kontakte, fehler):
+    def kontakte_laden_fertig(
+        self, generation, kontakte, fehler, auswahl_wiederherstellen
+    ):
         if generation != self._lade_generation:
             return GLib.SOURCE_REMOVE
 
         if kontakte is None:
-            self.status_label.set_text("Kontakte konnten nicht geladen werden")
+            self.status_label.set_text(
+                "Kontakte konnten nicht geladen werden"
+            )
             self.ladefehler_anzeigen("\n".join(fehler))
             return GLib.SOURCE_REMOVE
 
         self.kontakte = kontakte
         self.kontakte_anzeigen()
+
+        # Gesicherte Auswahl wiederherstellen
+        if auswahl_wiederherstellen:
+            for row, kontakt in self.zeilen_kontakte.items():
+                schluessel = (
+                    kontakt["adressbuch_uid"],
+                    kontakt["uid"]
+                )
+
+                if schluessel in auswahl_wiederherstellen:
+                    self.liste.select_row(row)
 
         if fehler:
             self.ladefehler_anzeigen(
@@ -1362,12 +1383,14 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
     def ladefehler_anzeigen(self, fehler):
         dialog = Adw.MessageDialog(
-            transient_for=self, modal=True,
-            heading="Laden fehlgeschlagen", body=fehler
+            transient_for=self,
+            modal=True,
+            heading="Laden fehlgeschlagen",
+            body=fehler
         )
         dialog.add_response("ok", "OK")
+        dialog.set_destroy_with_parent(True)
         dialog.present()
-
     # =============================================================
     # Kontakte anzeigen
     # =============================================================
@@ -1426,13 +1449,26 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
         hauptbox.set_margin_end(18)
         hauptbox.set_vexpand(True)
 
+        titel_zeile = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=12
+        )
+
         titel = Gtk.Label(
             label=f"{len(self.ausgewaehlte_kontakte)} Kontakte ausgewählt"
         )
         titel.add_css_class("title-3")
         titel.set_halign(Gtk.Align.START)
 
-        hauptbox.append(titel)
+        titel_zeile.append(titel)
+
+        speicher_status = Gtk.Label(label="Speichere …")
+        speicher_status.add_css_class("dim-label")
+        speicher_status.set_visible(False)
+
+        titel_zeile.append(speicher_status)
+
+        hauptbox.append(titel_zeile)
 
         kategorien = sorted({
             kategorie
@@ -1536,7 +1572,7 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
                 ):
                     return
 
-                # PHASE 3: Bestehende Grid-Positionen nicht durch Sortieren entwerten.
+                # Bestehende Grid-Positionen nicht durch Sortieren entwerten.
                 kategorien.append(name)
 
                 checkbox = Gtk.CheckButton(label=name)
@@ -1576,7 +1612,6 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             spacing=6
         )
         button_box.set_halign(Gtk.Align.END)
-
         abbrechen_button = Gtk.Button(label="Abbrechen")
         uebernehmen_button = Gtk.Button(label="Übernehmen")
         ok_button = Gtk.Button(label="OK")
@@ -1598,18 +1633,13 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
 
 
-        # PHASE 1: Alle Speichervorgänge laufen asynchron. Das Dialogfenster
+        # Alle Speichervorgänge laufen asynchron. Das Dialogfenster
         # bleibt bis zur Bestätigung des Backends geöffnet; kein Doppel-Klick.
         speicherzustand = {"aktiv": False, "schliessen_nach_erfolg": False}
 
         def aenderungen_speichern(schliessen_nach_erfolg=False):
-            print("DEBUG: Funktion aufgerufen", flush=True)
-            print("DEBUG: Änderungen vorhanden:", bool(aenderungen), flush=True)
-            print("DEBUG: Speichern aktiv:", speicherzustand["aktiv"], flush=True)
-
             if speicherzustand["aktiv"]:
                 return
-                print("DEBUG: Speichern-Button wurde ausgelöst", flush=True)
             ausgewaehlte_kontakte = list(self.ausgewaehlte_kontakte)
             ausgewaehlte_uids = {
                 (kontakt["adressbuch_uid"], kontakt["uid"])
@@ -1624,7 +1654,8 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
             speicherzustand["aktiv"] = True
             speicherzustand["schliessen_nach_erfolg"] = schliessen_nach_erfolg
             self._speichern_aktiv = True
-            # PHASE 1: Während des Speicherns keine Adressbücher umschalten.
+            speicher_status.set_visible(True)
+            hauptbox.set_sensitive(False)
             for schalter in self.adressbuch_switches.values():
                 schalter.set_sensitive(False)
             for knopf in (uebernehmen_button, ok_button, abbrechen_button):
@@ -1634,10 +1665,18 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
                 # Callback wird vom Backend garantiert im GTK-Hauptthread ausgeführt.
                 speicherzustand["aktiv"] = False
                 self._speichern_aktiv = False
+
+                # Adressbuchschalter im Hauptfenster wieder freigeben.
                 for schalter in self.adressbuch_switches.values():
                     schalter.set_sensitive(True)
-                for knopf in (uebernehmen_button, ok_button, abbrechen_button):
-                    knopf.set_sensitive(True)
+
+                # Dialog nur wieder freigeben, wenn er noch geöffnet ist.
+                if fenster.get_visible():
+                    hauptbox.set_sensitive(True)
+                    speicher_status.set_visible(False)
+
+                    for knopf in (uebernehmen_button, ok_button, abbrechen_button):
+                        knopf.set_sensitive(True)
                 if fehler:
                     meldung = Adw.MessageDialog(
                         transient_for=fenster, modal=True,
@@ -1663,13 +1702,10 @@ class KontaktfilterWindow(Adw.ApplicationWindow):
 
 
             try:
-                print("DEBUG: Starte Backend-Auftrag", flush=True)
                 speichere_kategorien_mehrere_async(
                     ausgewaehlte_kontakte, kontakt_aenderungen, speichern_fertig
                 )
-                print("DEBUG: Backend-Auftrag gestartet", flush=True)
             except Exception as fehler:
-                print(f"DEBUG: Fehler beim Start: {fehler}", flush=True)
                 speichern_fertig(fehler)
 
 
@@ -1740,7 +1776,7 @@ class KontaktfilterApp(Adw.Application):
         window.present()
 
 
-# PHASE 3: Sicherer Import in Unit-Tests und andere Python-Module.
+#Sicherer Import in Unit-Tests und andere Python-Module.
 if __name__ == "__main__":
     app = KontaktfilterApp()
     app.run()

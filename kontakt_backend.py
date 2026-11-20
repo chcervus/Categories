@@ -20,57 +20,59 @@ def lade_kontakte(adressbuch_uids=None):
     def lade_ein_adressbuch(uid):
         """Verbindet sich mit einer Quelle und bereitet deren Kontakte auf."""
 
-        registry = EDataServer.SourceRegistry.new_sync(None)
-        source = registry.ref_source(uid)
-
-        if source is None:
-            return [], f"Quelle {uid} wurde nicht gefunden."
+        name = uid
 
         try:
+            registry = EDataServer.SourceRegistry.new_sync(None)
+            source = registry.ref_source(uid)
+
+            if source is None:
+                return [], f"Quelle {uid} wurde nicht gefunden."
+
+            name = source.get_display_name()
+
             client = EBook.BookClient.connect_sync(source, 3, None)
             success, contacts = client.get_contacts_sync("", None)
 
             if not success:
                 return [], (
-                    f"{source.get_display_name()}: "
-                    "Kontakte konnten nicht abgerufen werden."
+                    f"{name}: Kontakte konnten nicht abgerufen werden."
                 )
 
+            ergebnis_buch = []
+
+            for contact in contacts:
+                kontakt = {
+                    "name": "",
+                    "email": [],
+                    "kategorien": [],
+                    "uid": "",
+                    "adressbuch_uid": uid,
+                    "eds_kontakt": contact,
+                    "book_client": client,
+                }
+
+                for attr in contact.get_attributes():
+                    feld = attr.get_name().upper()
+                    werte = [
+                        wert.str for wert in attr.get_values_decoded()
+                    ]
+
+                    if feld == "FN":
+                        kontakt["name"] = werte[0] if werte else ""
+                    elif feld == "EMAIL":
+                        kontakt["email"].extend(werte)
+                    elif feld == "CATEGORIES":
+                        kontakt["kategorien"].extend(werte)
+                    elif feld == "UID":
+                        kontakt["uid"] = werte[0] if werte else ""
+
+                ergebnis_buch.append(kontakt)
+
+            return ergebnis_buch, None
+
         except Exception as exc:
-            return [], f"{source.get_display_name()}: {exc}"
-
-        ergebnis_buch = []
-
-        for contact in contacts:
-            kontakt = {
-                "name": "",
-                "email": [],
-                "kategorien": [],
-                "uid": "",
-                "adressbuch_uid": uid,
-                "eds_kontakt": contact,
-                "book_client": client,
-            }
-
-            for attr in contact.get_attributes():
-                feld = attr.get_name().upper()
-                werte = [
-                    wert.str for wert in attr.get_values_decoded()
-                ]
-
-                if feld == "FN":
-                    kontakt["name"] = werte[0] if werte else ""
-                elif feld == "EMAIL":
-                    kontakt["email"].extend(werte)
-                elif feld == "CATEGORIES":
-                    kontakt["kategorien"].extend(werte)
-                elif feld == "UID":
-                    kontakt["uid"] = werte[0] if werte else ""
-
-            ergebnis_buch.append(kontakt)
-
-        return ergebnis_buch, None
-
+            return [], f"{name}: {exc}"
     from concurrent.futures import ThreadPoolExecutor
 
     if not adressbuch_uids:
@@ -94,35 +96,35 @@ def lade_kontakte(adressbuch_uids=None):
 
     return kontakte, fehler
 
-
 def lade_adressbuecher():
     """Lädt alle aktivierten EDS-Adressbücher."""
 
-    registry = EDataServer.SourceRegistry.new_sync(None)
+    try:
+        registry = EDataServer.SourceRegistry.new_sync(None)
 
-    quellen = registry.list_sources(
-        EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK
-    )
+        quellen = registry.list_sources(
+            EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK
+        )
 
-    adressbuecher = []
+        adressbuecher = []
 
-    for quelle in quellen:
+        for quelle in quellen:
+            if not quelle.get_enabled():
+                continue
 
-        if not quelle.get_enabled():
-            print(
-                f"Überspringe deaktiviertes Adressbuch: "
-                f"{quelle.get_display_name()}"
-            )
-            continue
+            adressbuch = {
+                "uid": quelle.get_uid(),
+                "name": quelle.get_display_name()
+            }
 
-        adressbuch = {
-            "uid": quelle.get_uid(),
-            "name": quelle.get_display_name()
-        }
+            adressbuecher.append(adressbuch)
 
-        adressbuecher.append(adressbuch)
+        return adressbuecher
 
-    return adressbuecher
+    except Exception as exc:
+        raise RuntimeError(
+            f"Adressbücher konnten nicht geladen werden: {exc}"
+        ) from exc
 
 # Filter nur einmal kompilieren, Kategorien in Anfuehrungszeichen
 # erlauben (auch AND/OR/NOT, Klammern und "Ohne Kategorie").
@@ -297,38 +299,28 @@ def _aktuelle_kategorien_speichern(client, kontakt, delta):
     return neue_kategorien
 
 
-def speichere_kategorien(kontakt, neue_kategorien):
-    """Kompatible synchrone Schnittstelle; nutzt ebenfalls Versionsprüfung."""
-    alte = set(kontakt["kategorien"])
-    neue = set(neue_kategorien)
-    delta = {k: k in neue for k in alte | neue}
-    # PHASE 1: Neuen Client auf aktuellem Thread verbinden.
-    registry = EDataServer.SourceRegistry.new_sync(None)
-    source = registry.ref_source(kontakt["adressbuch_uid"])
-    if source is None:
-        raise RuntimeError("Adressbuch ist nicht mehr vorhanden.")
-    client = EBook.BookClient.connect_sync(source, 3, None)
-    kategorien = _aktuelle_kategorien_speichern(client, kontakt, delta)
-    kontakt["kategorien"] = kategorien
-    return True
-
-
 def speichere_kategorien_mehrere_async(kontakte, kontakt_aenderungen, callback):
-    """Speichert Änderungen im Worker; Callback im GLib-Hauptthread.
+    """Speichert Änderungen im Worker; Callback im GLib-Hauptthread."""
 
-    kontakt_aenderungen: {(adressbuch_uid, kontakt_uid): {kategorie: bool}}
-    """
-    # PHASE 1: Eingaben kopieren, damit UI-Änderungen laufende Jobs nicht ändern.
     auftraege = []
+
     for kontakt in kontakte:
         schluessel = (kontakt["adressbuch_uid"], kontakt["uid"])
-        if schluessel in kontakt_aenderungen:
-            auftraege.append((kontakt, dict(kontakt_aenderungen[schluessel])))
 
+        if schluessel in kontakt_aenderungen:
+            auftraege.append(
+                (kontakt, dict(kontakt_aenderungen[schluessel]))
+            )
+
+    # Nichts zu speichern
+    if not auftraege:
+        GLib.idle_add(callback, None)
+        return
 
     def fertig_im_hauptthread(erfolge, fehler):
         for kontakt, neue_kategorien in erfolge:
             kontakt["kategorien"] = neue_kategorien
+
         if fehler:
             callback(RuntimeError(
                 f"{len(fehler)} von {len(auftraege)} Kontakten konnten nicht "
@@ -337,32 +329,55 @@ def speichere_kategorien_mehrere_async(kontakte, kontakt_aenderungen, callback):
             ))
         else:
             callback(None)
+
         return GLib.SOURCE_REMOVE
 
     def arbeiter():
-        erfolge, fehler = [], []
+        erfolge = []
+        fehler = []
+
         try:
             registry = EDataServer.SourceRegistry.new_sync(None)
             clients = {}
+
             for kontakt, delta in auftraege:
                 try:
                     buch_uid = kontakt["adressbuch_uid"]
+
                     if buch_uid not in clients:
                         source = registry.ref_source(buch_uid)
+
                         if source is None:
-                            raise RuntimeError("Adressbuch nicht mehr vorhanden.")
+                            raise RuntimeError(
+                                "Adressbuch nicht mehr vorhanden."
+                            )
+
                         clients[buch_uid] = EBook.BookClient.connect_sync(
                             source, 3, None
                         )
-                    neu = _aktuelle_kategorien_speichern(
+
+                    neue_kategorien = _aktuelle_kategorien_speichern(
                         clients[buch_uid], kontakt, delta
                     )
-                    erfolge.append((kontakt, neu))
+
+                    erfolge.append((kontakt, neue_kategorien))
+
                 except Exception as exc:
-                    # Keine Kontaktdaten oder Kategorien in Fehlerlogs ausgeben.
-                    fehler.append(f"Kontakt {kontakt.get('uid', '?')}: {exc}")
+                    fehler.append(
+                        f"Kontakt {kontakt.get('uid', '?')}: {exc}"
+                    )
+
         except Exception as exc:
-            fehler.append(f"Adressbuch-Verbindung fehlgeschlagen: {exc}")
-        GLib.idle_add(fertig_im_hauptthread, erfolge, fehler)
+            for kontakt, delta in auftraege:
+                fehler.append(
+                    f"Kontakt {kontakt.get('uid', '?')}: "
+                    f"Adressbuch-Verbindung fehlgeschlagen: {exc}"
+                )
+
+        GLib.idle_add(
+            fertig_im_hauptthread,
+            erfolge,
+            fehler
+        )
 
     threading.Thread(target=arbeiter, daemon=True).start()
